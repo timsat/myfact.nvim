@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**myrefact.nvim** - Neovim plugin for automated constraint softening in Python OR-Tools/CP-SAT solver models. Converts hard constraints like `model.Add(x == y)` into soft constraints with optional enforcement variables using Tree-sitter queries and template-based code generation.
+**myfact.nvim** - Neovim plugin for automated constraint softening in Python OR-Tools/CP-SAT solver models. Converts hard constraints like `model.Add(x == y)` into soft constraints with optional enforcement variables using Tree-sitter queries and template-based code generation.
 
 ## Architecture
 
 ### Three-Component Design
 
-1. **plugin/myrefact.lua** - Plugin entry point that registers `:Myrefact` command
-2. **lua/myrefact/init.lua** - Core refactoring engine with Tree-sitter queries
+1. **plugin/myfact.lua** - Plugin entry point that registers `:myfact` command
+2. **lua/myfact/init.lua** - Core refactoring engine with Tree-sitter queries
 3. **lua/template.lua** - Standalone template engine (reusable, no dependencies on plugin)
 
 ### Core Workflow Pattern
@@ -34,7 +34,7 @@ The plugin implements an async interactive refactoring workflow:
 
 ## Tree-sitter Query System
 
-Located in `lua/myrefact/init.lua`, lines 6-56.
+Located in `lua/myfact/init.lua`, lines 6-56.
 
 ### Query Structure
 
@@ -89,7 +89,7 @@ Templates execute in sandboxed environment (line 145-152 in init.lua):
 
 ## User Command
 
-`:Myrefact [range]` - Defined in plugin/myrefact.lua
+`:myfact [range]` - Defined in plugin/myfact.lua
 
 - Works on visual selection or line ranges
 - No arguments
@@ -160,6 +160,6 @@ See CODE_REVIEW.md for comprehensive analysis. Critical issues:
 ## Code Style Patterns
 
 1. **Local function encapsulation** - Helper functions as `local function` within module scope
-2. **Plugin guard** - `if vim.g.loaded_myrefact == 1 then return end` at top of plugin file
+2. **Plugin guard** - `if vim.g.loaded_myfact == 1 then return end` at top of plugin file
 3. **Query parsing at load time** - Queries compiled once, stored in `q_parsed` table
 4. **Reverse iteration for replacements** - Critical pattern to maintain line offsets

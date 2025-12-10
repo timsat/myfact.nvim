@@ -6,7 +6,7 @@ M.check = function()
     -- make sure setup function parameters are ok
     local res, _ = pcall(function() require("plenary.async") end)
     if res then
-        vim.health.ok("Setup is correct")
+        vim.health.ok("plenary.async is accessible")
     else
         vim.health.error("plenary.async couldn't be loaded")
     end
