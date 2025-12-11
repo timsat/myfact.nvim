@@ -99,8 +99,8 @@ end, 7)
 --- refactors buffer within region.
 ---
 ---@param bufnr integer bufno
----@param startz integer 0-based line to start with (including)
----@param endz integer 0-based end line (excluding)
+---@param startz integer? 0-based line to start with (including)
+---@param endz integer? 0-based end line (excluding)
 ---@param refactoring_name string name of the refactoring to apply see queries keys above
 function refactor(bufnr, startz, endz, refactoring_name)
     local to_replace = {}
@@ -174,16 +174,15 @@ end
 --- finds matches <wip>
 ---
 ---@param bufnr integer bufno
----@param startz integer 0-based line to start with (including)
----@param endz integer 0-based end line (excluding)
+---@param startz integer? 0-based line to start with (including)
+---@param endz integer? 0-based end line (excluding)
 ---@param refactoring_name string name of the refactoring to apply see queries keys above
-local function find_matches(bufnr, startz, endz, refactoring_name)
+M.find_matches = function(bufnr, startz, endz, refactoring_name)
     local to_replace = {}
     local query_parsed = queries[refactoring_name].q_parsed
-
+    local captures = {}
     -- Collect matches and ask user
     for pattern, match, metadata in query_parsed:iter_matches(get_root(bufnr), bufnr, startz, endz) do
-        local captures = {}
         for id, nodes in pairs(match) do
             local name = query_parsed.captures[id]
             captures[name] = nodes[1]
@@ -191,14 +190,15 @@ local function find_matches(bufnr, startz, endz, refactoring_name)
 
         local stm = captures.stm
     end
+    return captures
 end
 
 --- refactors buffer within region. Function is asynchronous, so will be
 --- executed in a coroutine
 ---
 ---@param bufnr integer bufno
----@param startz integer 0-based line to start with (including)
----@param endz integer 0-based end line (excluding)
+---@param startz integer? 0-based line to start with (including)
+---@param endz integeri? 0-based end line (excluding)
 ---@param refactoring_name string name of the refactoring to apply see queries keys above
 M.refactor = async.void(refactor)
 
