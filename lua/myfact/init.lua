@@ -3,6 +3,11 @@ local async = require("plenary.async")
 
 local M = {}
 
+--- @class MatchEntry
+--- @field node TSNode
+--- @field bufnr integer
+
+--- @type {string: {q: string, q_parsed:vim.treesitter.Query, sub: string} }[]
 local queries = {
     soften_constraint = {
         q = [[
@@ -96,6 +101,23 @@ local select_range = async.wrap(function(sr, sc, so, er, ec, eo, cb)
     vim.defer_fn(cb, 200)
 end, 7)
 
+---
+---
+---@param matchentry MatchEntry
+---@return table
+local matchentry_to_qf = function(matchentry)
+    local text   = vim.treesitter.get_node_text(matchentry.node, matchentry.bufnr)
+    local sl, sc = matchentry.node:range(false)
+
+    return {
+        bufnr = matchentry.bufnr,
+        filename = vim.api.nvim_buf_get_name(matchentry.bufnr),
+        lnum = sl + 1,
+        col = sc + 1,
+        text = text,
+    }
+end
+
 --- refactors buffer within region.
 ---
 ---@param bufnr integer bufno
@@ -104,6 +126,8 @@ end, 7)
 ---@param refactoring_name string name of the refactoring to apply see queries keys above
 function refactor(bufnr, startz, endz, refactoring_name)
     local to_replace = {}
+
+    --- @type vim.treesitter.Query
     local query_parsed = queries[refactoring_name].q_parsed
 
     -- Collect matches and ask user
@@ -177,21 +201,39 @@ end
 ---@param startz integer? 0-based line to start with (including)
 ---@param endz integer? 0-based end line (excluding)
 ---@param refactoring_name string name of the refactoring to apply see queries keys above
+---@return MatchEntry[]
 M.find_matches = function(bufnr, startz, endz, refactoring_name)
-    local to_replace = {}
+    --- @type vim.treesitter.Query
     local query_parsed = queries[refactoring_name].q_parsed
     local captures = {}
+    local norm_bufnr = vim.fn.bufnr(bufnr)
     -- Collect matches and ask user
     for pattern, match, metadata in query_parsed:iter_matches(get_root(bufnr), bufnr, startz, endz) do
+        local capture = {}
         for id, nodes in pairs(match) do
             local name = query_parsed.captures[id]
-            captures[name] = nodes[1]
+            capture[name] = nodes[1]
         end
-
-        local stm = captures.stm
+        table.insert(captures, { node = capture.stm, bufnr = norm_bufnr })
     end
     return captures
 end
+
+--- Calls list_producer function to get the list and puts it into qflist
+---
+---@param list_producer fun(): MatchEntry[] function which generates matches
+M.populate_qflist = function(list_producer)
+    local qf_entries = {}
+    for _, value in ipairs(list_producer()) do
+        table.insert(qf_entries, matchentry_to_qf(value))
+    end
+    vim.fn.setqflist(qf_entries, " ")
+    vim.fn.setqflist({}, "a", { title = "myfact matches" })
+end
+--[[
+local myfact = require('myfact')
+myfact.populate_qflist(function() myfact.find_matches(0,0,nil,"soften_constraint") end)
+--]]
 
 --- refactors buffer within region. Function is asynchronous, so will be
 --- executed in a coroutine
