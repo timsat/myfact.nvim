@@ -9,6 +9,14 @@ local M = {}
 
 --- @type {string: {q: string, q_parsed:vim.treesitter.Query, sub: string} }[]
 local queries = {
+    substitute_optional = {
+        q = [[
+(type (subscript value: (_) @val (#eq? @val "t.Optional")
+                 subscript: (_) @sub) ) @stm
+                       ]],
+        q_parsed = nil,
+        sub = [[{{sub}} | None]]
+    },
     soften_constraint = {
         q = [[
 (expression_statement
@@ -166,13 +174,11 @@ function refactor(bufnr, startz, endz, refactoring_name)
         local m = to_replace[i]
 
         -- Extract text from captured nodes
-        local env = setmetatable({
-            obj = m.captures.obj and vim.treesitter.get_node_text(m.captures.obj, bufnr) or "",
-            attr = m.captures.attr and vim.treesitter.get_node_text(m.captures.attr, bufnr) or "",
-            lhs = m.captures.lhs and vim.treesitter.get_node_text(m.captures.lhs, bufnr) or "",
-            op = m.captures.op and vim.treesitter.get_node_text(m.captures.op, bufnr) or "",
-            rhs = m.captures.rhs and vim.treesitter.get_node_text(m.captures.rhs, bufnr) or "",
-        }, { __index = _G })
+        local captures_text = vim.tbl_map(
+            function(v)
+                return vim.treesitter.get_node_text(v, bufnr) or ""
+            end, m.captures)
+        local env = setmetatable(captures_text, { __index = _G })
         env.op_not = op_negations[env.op] or env.op
 
         -- Render the template
